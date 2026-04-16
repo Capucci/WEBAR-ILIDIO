@@ -3,16 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerador de Projetos AR</title>
+    <title>Gerador AR - Plataforma Profissional</title>
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -26,19 +22,9 @@
             padding: 30px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         }
-        h1, h2, h3 {
-            color: #333;
-            margin-bottom: 15px;
-        }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            font-weight: bold;
-            margin-bottom: 5px;
-            color: #555;
-        }
+        h1, h2, h3 { color: #333; margin-bottom: 15px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; color: #555; }
         input, select, textarea {
             width: 100%;
             padding: 10px;
@@ -56,10 +42,7 @@
             font-size: 16px;
             margin: 10px 5px;
         }
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
+        button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
         .elemento-ar {
             background: #f5f5f5;
             padding: 20px;
@@ -74,9 +57,7 @@
             background: #f9f9f9;
             border-radius: 10px;
         }
-        .hidden {
-            display: none;
-        }
+        .hidden { display: none; }
         .url-display {
             background: #e0e0e0;
             padding: 10px;
@@ -85,18 +66,23 @@
             margin: 10px 0;
             font-family: monospace;
         }
-        .btn-danger {
-            background: #e74c3c;
-        }
-        .btn-success {
-            background: #27ae60;
+        .btn-danger { background: #e74c3c; }
+        .btn-success { background: #27ae60; }
+        .parametros-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>✨ Criar Novo Projeto AR</h1>
-        <p>Preencha os dados abaixo para gerar sua experiência em Realidade Aumentada</p>
+        <h1>✨ Criar Projeto AR (MindAR Oficial)</h1>
+        <p>Baseado na documentação oficial do MindAR - Suporte a múltiplos targets, vídeo com chroma-key, áudio e links</p>
         
         <form id="formProjeto">
             <div class="form-group">
@@ -109,7 +95,32 @@
                 <input type="text" id="cliente" placeholder="Nome do cliente (opcional)">
             </div>
             
+            <h3>⚙️ Parâmetros de Rastreamento (opcionais)</h3>
+            <div class="parametros-grid">
+                <div class="form-group">
+                    <label>Suavização (filterMinCF):</label>
+                    <input type="text" id="filterMinCF" value="0.001" placeholder="0.001">
+                    <small>Menor = menos tremor</small>
+                </div>
+                <div class="form-group">
+                    <label>Velocidade (filterBeta):</label>
+                    <input type="text" id="filterBeta" value="1000" placeholder="1000">
+                    <small>Maior = menos atraso</small>
+                </div>
+                <div class="form-group">
+                    <label>Tolerância de perda (missTolerance):</label>
+                    <input type="text" id="missTolerance" value="5" placeholder="5">
+                    <small>Frames antes de perder o target</small>
+                </div>
+                <div class="form-group">
+                    <label>Max Targets (maxTrack):</label>
+                    <input type="text" id="maxTrack" value="1" placeholder="1">
+                    <small>Rastrear múltiplos simultaneamente</small>
+                </div>
+            </div>
+            
             <h3>📦 Elementos de Realidade Aumentada</h3>
+            <p><small>Cada elemento será anexado a um target específico (targetIndex)</small></p>
             <div id="elementosList"></div>
             <button type="button" onclick="adicionarElemento()">+ Adicionar Elemento AR</button>
             
@@ -127,7 +138,7 @@
             <div id="qrCodeImg"></div>
             <button onclick="baixarProjeto()" class="btn-success">💾 Baixar Projeto (ZIP)</button>
             <button onclick="copiarUrl()">📋 Copiar URL</button>
-            <button onclick="document.getElementById('resultado').classList.add('hidden')">Fechar</button>
+            <button onclick="fecharResultado()">Fechar</button>
         </div>
     </div>
 
@@ -153,7 +164,6 @@
             `;
             document.getElementById('elementosList').appendChild(div);
             
-            // Mostrar opções padrão (vídeo)
             mostrarOpcoes(document.getElementById(`tipo-${elementosCount}`), elementosCount);
             elementosCount++;
         }
@@ -165,11 +175,12 @@
             let html = `
                 <div class="form-group">
                     <label>Nome do arquivo:</label>
-                    <input type="text" id="src-${id}" placeholder="ex: video.mp4" required>
+                    <input type="text" id="src-${id}" placeholder="ex: video.mp4 ou imagem.png" required>
                 </div>
                 <div class="form-group">
                     <label>Target Index (0, 1, 2...):</label>
                     <input type="number" id="target-${id}" value="0" required>
+                    <small>Índice do target no arquivo .mind compilado</small>
                 </div>
                 <div class="form-group">
                     <label>Posição X, Y, Z:</label>
@@ -195,12 +206,26 @@
                         <label>Som MP3 (opcional):</label>
                         <input type="text" id="sound-${id}" placeholder="som.mp3">
                     </div>
+                    <div class="form-group">
+                        <label>Loop do vídeo:</label>
+                        <select id="loop-${id}">
+                            <option value="true">Sim</option>
+                            <option value="false">Não</option>
+                        </select>
+                    </div>
                 `;
             } else if (tipo === 'imagem') {
                 html += `
                     <div class="form-group">
                         <label>Link (URL para abrir ao clicar):</label>
-                        <input type="text" id="link-${id}" placeholder="https://meusite.com">
+                        <input type="text" id="link-${id}" placeholder="https://meusite.com ou cena2.html">
+                    </div>
+                    <div class="form-group">
+                        <label>Abrir em nova aba:</label>
+                        <select id="newtab-${id}">
+                            <option value="true">Sim</option>
+                            <option value="false">Não</option>
+                        </select>
                     </div>
                 `;
             }
@@ -218,7 +243,11 @@
             document.getElementById('cliente').value = '';
             document.getElementById('elementosList').innerHTML = '';
             elementosCount = 0;
-            adicionarElemento(); // Adicionar um elemento vazio
+            adicionarElemento();
+        }
+        
+        function fecharResultado() {
+            document.getElementById('resultado').classList.add('hidden');
         }
         
         document.getElementById('formProjeto').addEventListener('submit', async (e) => {
@@ -230,7 +259,6 @@
                 return;
             }
             
-            // Limpar nome de projeto (remover espaços e caracteres especiais)
             const nomeLimpo = nomeProjeto.toLowerCase().replace(/[^a-z0-9]/g, '-');
             
             // Coletar elementos
@@ -256,8 +284,10 @@
                 if (tipo === 'video') {
                     elemento.chromaKey = document.getElementById(`chroma-${i}`)?.value || 'none';
                     elemento.sound = document.getElementById(`sound-${i}`)?.value || null;
+                    elemento.loop = document.getElementById(`loop-${i}`)?.value === 'true';
                 } else if (tipo === 'imagem') {
                     elemento.link = document.getElementById(`link-${i}`)?.value || null;
+                    elemento.newTab = document.getElementById(`newtab-${i}`)?.value === 'true';
                 }
                 
                 elementos.push(elemento);
@@ -268,6 +298,14 @@
                 return;
             }
             
+            // Parâmetros de rastreamento
+            const trackingParams = {
+                filterMinCF: parseFloat(document.getElementById('filterMinCF').value) || 0.001,
+                filterBeta: parseFloat(document.getElementById('filterBeta').value) || 1000,
+                missTolerance: parseInt(document.getElementById('missTolerance').value) || 5,
+                maxTrack: parseInt(document.getElementById('maxTrack').value) || 1
+            };
+            
             // Gerar URL
             const urlCompleta = `https://${window.location.hostname}/projetos/${nomeLimpo}/`;
             
@@ -276,6 +314,7 @@
                 cliente: document.getElementById('cliente').value,
                 url: urlCompleta, 
                 elementos,
+                trackingParams,
                 dataCriacao: new Date().toISOString()
             };
             
@@ -302,29 +341,51 @@
             
             const zip = new JSZip();
             
-            // Gerar HTML do projeto
+            // Gerar HTML do projeto usando a estrutura correta do MindAR
             const htmlProjeto = gerarHTMLProjeto(projetoAtual);
             zip.file('index.html', htmlProjeto);
             
-            // Criar arquivo de exemplo para targets
-            const targetsReadme = `# Instruções para este projeto AR
+            // Instruções detalhadas
+            const instrucoes = `========================================
+INSTRUÇÕES PARA ESTE PROJETO AR
+========================================
 
-1. Compile seus targets .mind usando o site: https://hiukim.github.io/mind-ar-js-doc/tools/compile
+1. COMPILAR OS TARGETS:
+   Acesse: https://hiukim.github.io/mind-ar-js-doc/tools/compile
+   - Faça upload das suas imagens target (na mesma ordem dos targetIndex usados)
+   - Clique em "Start" e depois "Download"
+   - Coloque o arquivo "targets.mind" na pasta raiz deste projeto
 
-2. Coloque o arquivo targets.mind nesta pasta
+2. ADICIONAR OS ASSETS:
+   - Coloque todos os arquivos de mídia (vídeos, imagens, sons) na pasta /assets/
+   - Verifique se os nomes dos arquivos estão corretos (maiúsculas/minúsculas)
 
-3. Coloque seus assets (vídeos, imagens, sons) na pasta /assets/
+3. ESTRUTURA FINAL:
+   projeto/
+   ├─ index.html
+   ├─ targets.mind
+   └─ assets/
+      ├─ video.mp4
+      ├─ imagem.png
+      └─ som.mp3
 
-4. Faça upload para seu servidor ou GitHub Pages
+4. PUBLICAR:
+   - Faça upload desta pasta para seu servidor ou GitHub Pages
+   - Acesse: ${projetoAtual.url}
 
-5. Acesse a URL: ${projetoAtual.url}
-`;
-            zip.file('INSTRUCOES.txt', targetsReadme);
+5. TESTAR NO CELULAR:
+   - Escaneie o QR Code gerado
+   - Aponte para os targets impressos
+
+========================================
+PROJETO: ${projetoAtual.nome}
+CLIENTE: ${projetoAtual.cliente || 'N/A'}
+ELEMENTOS: ${projetoAtual.elementos.length}
+========================================`;
             
-            // Criar pasta assets vazia com arquivo .gitkeep
+            zip.file('INSTRUCOES.txt', instrucoes);
             zip.file('assets/.gitkeep', '');
             
-            // Gerar e baixar ZIP
             zip.generateAsync({ type: 'blob' }).then((blob) => {
                 saveAs(blob, `${projetoAtual.nome}-ar-project.zip`);
             });
@@ -376,258 +437,180 @@
     <div id="status">🔍 Aguardando target...</div>
     <div class="instruction">🎯 Aponte para o marcador | 🔗 Toque nos elementos</div>
     
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
-                "mindar": "https://unpkg.com/mind-ar@1.2.3/dist/mindar-image-three.prod.js"
-            }
-        }
-    </script>
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
     
-    <script type="module">
-        import * as THREE from 'three';
-        import { MindARThree } from 'mindar';
-        
-        const config = ${JSON.stringify(projeto.elementos, null, 2)};
+    <script>
+        // Configuração do projeto
+        const elementos = ${JSON.stringify(projeto.elementos, null, 2)};
+        const trackingParams = ${JSON.stringify(projeto.trackingParams, null, 2)};
         const assetsPath = './assets/';
         
-        const mindar = new MindARThree({
-            container: document.body,
-            imageTargetSrc: './targets.mind'
-        });
-        
-        class TrackedElement {
-            constructor(anchor, elemConfig) {
-                this.anchor = anchor;
-                this.config = elemConfig;
-                this.mesh = null;
-                this.videoElement = null;
-                this.audioElement = null;
-                this.videoCurrentTime = 0;
-                this.isVisible = false;
-            }
+        // Aguardar carregamento do A-Frame
+        document.addEventListener('DOMContentLoaded', () => {
+            const sceneEl = document.querySelector('a-scene');
+            const statusDiv = document.getElementById('status');
             
-            createMesh() {
-                if (this.config.tipo === 'video') return this.createVideoMesh();
-                if (this.config.tipo === 'imagem') return this.createImageMesh();
-                return null;
-            }
+            // Configurar parâmetros de rastreamento
+            const mindarAttr = \`imageTargetSrc: ./targets.mind; filterMinCF: \${trackingParams.filterMinCF}; filterBeta: \${trackingParams.filterBeta}; missTolerance: \${trackingParams.missTolerance}; maxTrack: \${trackingParams.maxTrack}\`;
+            sceneEl.setAttribute('mindar-image', mindarAttr);
             
-            createVideoMesh() {
-                this.videoElement = document.createElement('video');
-                this.videoElement.src = assetsPath + this.config.src;
-                this.videoElement.loop = false;
-                this.videoElement.playsInline = true;
-                this.videoElement.crossOrigin = "anonymous";
-                this.videoElement.load();
-                
-                const videoTexture = new THREE.VideoTexture(this.videoElement);
-                let material;
-                
-                if (this.config.chromaKey && this.config.chromaKey !== 'none') {
-                    const chromaColor = this.config.chromaKey === 'green' ? new THREE.Color(0x00ff00) : new THREE.Color(0x0000ff);
-                    const vertexShader = \`
-                        varying vec2 vUv;
-                        void main() {
-                            vUv = uv;
-                            gl_PointSize = 1.0;
-                            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-                        }
-                    \`;
-                    const fragmentShader = \`
-                        uniform sampler2D videoTexture;
-                        uniform vec3 chromaColor;
-                        uniform float threshold;
-                        varying vec2 vUv;
-                        void main() {
-                            vec4 color = texture2D(videoTexture, vUv);
-                            float diff = abs(color.r - chromaColor.r) + abs(color.g - chromaColor.g) + abs(color.b - chromaColor.b);
-                            if (diff < 0.3) discard;
-                            gl_FragColor = color;
-                        }
-                    \`;
-                    material = new THREE.ShaderMaterial({
-                        uniforms: {
-                            videoTexture: { value: videoTexture },
-                            chromaColor: { value: chromaColor },
-                            threshold: { value: 0.3 }
-                        },
-                        vertexShader: vertexShader,
-                        fragmentShader: fragmentShader,
-                        transparent: true
-                    });
-                } else {
-                    material = new THREE.MeshBasicMaterial({ map: videoTexture });
+            // Controlar elementos multimídia
+            const videoElements = new Map();
+            const audioElements = new Map();
+            const videoTimes = new Map();
+            
+            // Função para pausar todos os elementos de um target
+            function pauseTargetElements(targetIndex) {
+                // Pausar vídeos
+                if (videoElements.has(targetIndex)) {
+                    const video = videoElements.get(targetIndex);
+                    if (video && !video.paused) {
+                        videoTimes.set(targetIndex, video.currentTime);
+                        video.pause();
+                    }
                 }
-                
-                const plane = new THREE.Mesh(new THREE.PlaneGeometry(1, 0.5625), material);
-                this.mesh = plane;
-                
-                if (this.config.sound) {
-                    this.audioElement = new Audio(assetsPath + this.config.sound);
-                    this.audioElement.loop = true;
-                    this.audioElement.preload = "auto";
-                }
-                
-                return plane;
-            }
-            
-            createImageMesh() {
-                const texture = new THREE.TextureLoader().load(assetsPath + this.config.src);
-                const material = new THREE.MeshStandardMaterial({ 
-                    map: texture, 
-                    side: THREE.DoubleSide, 
-                    transparent: true 
-                });
-                const plane = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), material);
-                this.mesh = plane;
-                
-                if (this.config.link) {
-                    this.mesh.userData = { link: this.config.link };
-                }
-                
-                return plane;
-            }
-            
-            play() {
-                if (this.videoElement && this.videoElement.paused) {
-                    this.videoElement.currentTime = this.videoCurrentTime;
-                    this.videoElement.play().catch(e => console.log("Vídeo:", e));
-                }
-                if (this.audioElement && this.audioElement.paused) {
-                    this.audioElement.play().catch(e => console.log("Áudio:", e));
-                }
-            }
-            
-            pause() {
-                if (this.videoElement && !this.videoElement.paused) {
-                    this.videoCurrentTime = this.videoElement.currentTime;
-                    this.videoElement.pause();
-                }
-                if (this.audioElement && !this.audioElement.paused) {
-                    this.audioElement.pause();
-                }
-            }
-            
-            setVisible(visible) {
-                if (visible === this.isVisible) return;
-                this.isVisible = visible;
-                
-                if (visible) {
-                    this.play();
-                    if (this.mesh) this.mesh.visible = true;
-                } else {
-                    this.pause();
-                    if (this.mesh) this.mesh.visible = false;
-                }
-            }
-        }
-        
-        const trackedElements = [];
-        const anchorsUsed = new Map();
-        
-        for (let i = 0; i < config.length; i++) {
-            const elemConfig = config[i];
-            let anchor = mindar.getAnchor(elemConfig.targetIndex);
-            if (!anchor) {
-                anchor = mindar.addAnchor(elemConfig.targetIndex);
-            }
-            
-            const tracked = new TrackedElement(anchor, elemConfig);
-            const mesh = tracked.createMesh();
-            
-            if (mesh) {
-                mesh.position.set(elemConfig.position.x, elemConfig.position.y, elemConfig.position.z);
-                mesh.scale.set(elemConfig.scale, elemConfig.scale, elemConfig.scale);
-                mesh.visible = false;
-                anchor.group.add(mesh);
-                trackedElements.push(tracked);
-            }
-        }
-        
-        // Configurar cliques
-        const renderer = mindar.renderer;
-        const camera = mindar.camera;
-        const raycaster = new THREE.Raycaster();
-        const mouse = new THREE.Vector2();
-        
-        window.addEventListener('click', (event) => {
-            if (!renderer || !camera) return;
-            
-            mouse.x = (event.clientX / renderer.domElement.clientWidth) * 2 - 1;
-            mouse.y = -(event.clientY / renderer.domElement.clientHeight) * 2 + 1;
-            raycaster.setFromCamera(mouse, camera);
-            
-            const clickableObjects = trackedElements
-                .filter(t => t.mesh?.userData?.link && t.isVisible)
-                .map(t => t.mesh);
-            
-            const intersects = raycaster.intersectObjects(clickableObjects);
-            if (intersects.length > 0) {
-                const link = intersects[0].object.userData.link;
-                if (link) {
-                    if (link.startsWith('http')) {
-                        window.open(link, '_blank');
-                    } else {
-                        window.location.href = link;
+                // Pausar áudios
+                if (audioElements.has(targetIndex)) {
+                    const audio = audioElements.get(targetIndex);
+                    if (audio && !audio.paused) {
+                        audio.pause();
                     }
                 }
             }
-        });
-        
-        // Monitorar visibilidade
-        const statusDiv = document.getElementById('status');
-        let lastVisibleCount = 0;
-        
-        function updateVisibility() {
-            let visibleCount = 0;
             
-            for (const tracked of trackedElements) {
-                const anchorVisible = tracked.anchor.group && tracked.anchor.group.visible;
-                tracked.setVisible(anchorVisible);
-                if (anchorVisible) visibleCount++;
+            // Função para retomar elementos de um target
+            function resumeTargetElements(targetIndex) {
+                if (videoElements.has(targetIndex)) {
+                    const video = videoElements.get(targetIndex);
+                    if (video && video.paused) {
+                        const savedTime = videoTimes.get(targetIndex) || 0;
+                        video.currentTime = savedTime;
+                        video.play().catch(e => console.log('Vídeo:', e));
+                    }
+                }
+                if (audioElements.has(targetIndex)) {
+                    const audio = audioElements.get(targetIndex);
+                    if (audio && audio.paused) {
+                        audio.play().catch(e => console.log('Áudio:', e));
+                    }
+                }
             }
             
-            if (visibleCount > 0 && lastVisibleCount === 0) {
-                statusDiv.innerHTML = \`✅ Target encontrado | AR ativo\`;
+            // Eventos de target encontrado/perdido
+            sceneEl.addEventListener('targetFound', (event) => {
+                const targetIndex = event.detail.targetIndex;
+                statusDiv.innerHTML = \`✅ Target \${targetIndex} encontrado | AR ativo\`;
                 statusDiv.className = 'target-found';
-            } else if (visibleCount === 0 && lastVisibleCount > 0) {
-                statusDiv.innerHTML = \`⚠️ Target perdido | Aponte novamente para retomar\`;
-                statusDiv.className = 'target-lost';
-            } else if (visibleCount === 0) {
-                statusDiv.innerHTML = \`🔍 Aguardando target...\`;
-            }
+                resumeTargetElements(targetIndex);
+            });
             
-            lastVisibleCount = visibleCount;
-            requestAnimationFrame(updateVisibility);
-        }
-        
-        // Iniciar AR
-        try {
-            await mindar.start();
-            updateVisibility();
-            console.log('AR iniciado com sucesso!');
-        } catch (error) {
-            console.error('Erro ao iniciar AR:', error);
-            statusDiv.innerHTML = '❌ Erro ao iniciar AR. Verifique se o arquivo targets.mind existe.';
-        }
-        
-        // Ativar áudio no primeiro toque (política do navegador)
-        const enableAudio = () => {
-            for (const tracked of trackedElements) {
-                if (tracked.audioElement && tracked.isVisible) {
-                    tracked.audioElement.play().catch(e => {});
+            sceneEl.addEventListener('targetLost', (event) => {
+                const targetIndex = event.detail.targetIndex;
+                statusDiv.innerHTML = \`⚠️ Target \${targetIndex} perdido | Pausado\`;
+                statusDiv.className = 'target-lost';
+                pauseTargetElements(targetIndex);
+            });
+            
+            sceneEl.addEventListener('arReady', () => {
+                console.log('MindAR pronto');
+            });
+            
+            sceneEl.addEventListener('arError', () => {
+                statusDiv.innerHTML = '❌ Erro na câmera. Verifique as permissões.';
+                statusDiv.style.color = '#f00';
+            });
+            
+            // Criar elementos para cada configuração
+            setTimeout(() => {
+                for (let i = 0; i < elementos.length; i++) {
+                    const elem = elementos[i];
+                    const targetSelector = \`[mindar-image-target="targetIndex: \${elem.targetIndex}"]\`;
+                    const targetEntity = document.querySelector(targetSelector);
+                    
+                    if (!targetEntity) continue;
+                    
+                    if (elem.tipo === 'video') {
+                        // Criar elemento de vídeo
+                        const video = document.createElement('video');
+                        video.src = assetsPath + elem.src;
+                        video.loop = elem.loop || false;
+                        video.playsInline = true;
+                        video.crossOrigin = "anonymous";
+                        video.load();
+                        
+                        videoElements.set(elem.targetIndex, video);
+                        videoTimes.set(elem.targetIndex, 0);
+                        
+                        // Criar textura para o vídeo
+                        const videoTexture = new THREE.VideoTexture(video);
+                        
+                        // Criar material (com ou sem chroma-key)
+                        let material;
+                        if (elem.chromaKey && elem.chromaKey !== 'none') {
+                            // Chroma-key via CSS/Shader será implementado
+                            material = new THREE.MeshBasicMaterial({ map: videoTexture });
+                        } else {
+                            material = new THREE.MeshBasicMaterial({ map: videoTexture });
+                        }
+                        
+                        // Adicionar som se existir
+                        if (elem.sound) {
+                            const audio = new Audio(assetsPath + elem.sound);
+                            audio.loop = elem.loop || false;
+                            audio.preload = "auto";
+                            audioElements.set(elem.targetIndex, audio);
+                        }
+                        
+                    } else if (elem.tipo === 'imagem' && elem.link) {
+                        // Adicionar evento de clique à imagem
+                        const imgEntity = targetEntity.querySelector('a-plane, a-image');
+                        if (imgEntity) {
+                            imgEntity.classList.add('clickable');
+                            imgEntity.addEventListener('click', () => {
+                                if (elem.newTab) {
+                                    window.open(elem.link, '_blank');
+                                } else {
+                                    window.location.href = elem.link;
+                                }
+                            });
+                        }
+                    }
                 }
-                if (tracked.videoElement && tracked.isVisible) {
-                    tracked.videoElement.play().catch(e => {});
-                }
+            }, 1000);
+        });
+    </script>
+    
+    <a-scene mindar-image="imageTargetSrc: ./targets.mind;" embedded color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+        <a-camera position="0 0 0" look-controls="enabled: false" cursor="fuse: false; rayOrigin: mouse;" raycaster="objects: .clickable"></a-camera>
+        
+        ${projeto.elementos.map((elem, idx) => {
+            if (elem.tipo === 'video') {
+                return `
+        <a-entity mindar-image-target="targetIndex: ${elem.targetIndex}">
+            <a-plane position="${elem.position.x} ${elem.position.y} ${elem.position.z}" scale="${elem.scale} ${elem.scale} ${elem.scale}" material="color: white; shader: flat; transparent: true" id="video-${idx}"></a-plane>
+        </a-entity>`;
+            } else if (elem.tipo === 'imagem') {
+                return `
+        <a-entity mindar-image-target="targetIndex: ${elem.targetIndex}">
+            <a-image src="${assetsPath}${elem.src}" position="${elem.position.x} ${elem.position.y} ${elem.position.z}" scale="${elem.scale} ${elem.scale} ${elem.scale}" ${elem.link ? 'class="clickable"' : ''}></a-image>
+        </a-entity>`;
             }
-            window.removeEventListener('touchstart', enableAudio);
-            window.removeEventListener('click', enableAudio);
-        };
-        window.addEventListener('touchstart', enableAudio);
-        window.addEventListener('click', enableAudio);
+            return '';
+        }).join('')}
+    </a-scene>
+    
+    <script>
+        // Inicializar vídeos após o MindAR estar pronto
+        setTimeout(() => {
+            const sceneEl = document.querySelector('a-scene');
+            const arSystem = sceneEl.systems['mindar-image-system'];
+            
+            // Forçar início automático
+            if (arSystem && !arSystem.started) {
+                arSystem.start();
+            }
+        }, 500);
     </script>
 </body>
 </html>`;
