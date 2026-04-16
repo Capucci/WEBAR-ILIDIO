@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerador AR - Plataforma Profissional</title>
+    <title>Gerador de Projetos AR</title>
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -22,10 +22,11 @@
             padding: 30px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         }
-        h1, h2, h3 { color: #333; margin-bottom: 15px; }
-        .form-group { margin-bottom: 20px; }
+        h1 { color: #333; margin-bottom: 10px; }
+        h3 { color: #333; margin: 20px 0 10px 0; }
+        .form-group { margin-bottom: 15px; }
         label { display: block; font-weight: bold; margin-bottom: 5px; color: #555; }
-        input, select, textarea {
+        input, select {
             width: 100%;
             padding: 10px;
             border: 2px solid #ddd;
@@ -64,10 +65,10 @@
             border-radius: 5px;
             word-break: break-all;
             margin: 10px 0;
-            font-family: monospace;
         }
         .btn-danger { background: #e74c3c; }
         .btn-success { background: #27ae60; }
+        small { font-size: 11px; color: #888; }
         .parametros-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -77,467 +78,327 @@
             border-radius: 10px;
             margin: 20px 0;
         }
-        small { font-size: 11px; color: #888; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>✨ Criar Projeto AR (MindAR Oficial)</h1>
-        <p>Baseado na documentação oficial do MindAR - Suporte a múltiplos targets, vídeo com chroma-key, áudio e links</p>
+        <h1>✨ Criar Projeto AR</h1>
+        <p>Crie experiências de Realidade Aumentada com múltiplos targets</p>
         
-        <form id="formProjeto">
+        <div class="form-group">
+            <label>Nome do Projeto:</label>
+            <input type="text" id="nomeProjeto" placeholder="ex: minha-campanha">
+        </div>
+        
+        <div class="form-group">
+            <label>Cliente:</label>
+            <input type="text" id="cliente" placeholder="Nome do cliente">
+        </div>
+        
+        <h3>⚙️ Configurações de Rastreamento</h3>
+        <div class="parametros-grid">
             <div class="form-group">
-                <label>Nome do Projeto (sem espaços):</label>
-                <input type="text" id="nomeProjeto" required placeholder="ex: campanha-natal">
+                <label>Suavização:</label>
+                <input type="text" id="filterMinCF" value="0.001">
             </div>
-            
             <div class="form-group">
-                <label>Cliente/Empresa:</label>
-                <input type="text" id="cliente" placeholder="Nome do cliente (opcional)">
+                <label>Velocidade:</label>
+                <input type="text" id="filterBeta" value="1000">
             </div>
-            
-            <h3>⚙️ Parâmetros de Rastreamento (opcionais)</h3>
-            <div class="parametros-grid">
-                <div class="form-group">
-                    <label>Suavização (filterMinCF):</label>
-                    <input type="text" id="filterMinCF" value="0.001" placeholder="0.001">
-                    <small>Menor = menos tremor</small>
-                </div>
-                <div class="form-group">
-                    <label>Velocidade (filterBeta):</label>
-                    <input type="text" id="filterBeta" value="1000" placeholder="1000">
-                    <small>Maior = menos atraso</small>
-                </div>
-                <div class="form-group">
-                    <label>Tolerância de perda (missTolerance):</label>
-                    <input type="text" id="missTolerance" value="5" placeholder="5">
-                    <small>Frames antes de perder o target</small>
-                </div>
-                <div class="form-group">
-                    <label>Max Targets (maxTrack):</label>
-                    <input type="text" id="maxTrack" value="1" placeholder="1">
-                    <small>Rastrear múltiplos simultaneamente</small>
-                </div>
+            <div class="form-group">
+                <label>Tolerância de perda:</label>
+                <input type="text" id="missTolerance" value="5">
             </div>
-            
-            <h3>📦 Elementos de Realidade Aumentada</h3>
-            <p><small>Cada elemento será anexado a um target específico (targetIndex)</small></p>
-            <div id="elementosList"></div>
-            <button type="button" id="btnAdicionarElemento">+ Adicionar Elemento AR</button>
-            
-            <div style="margin-top: 30px;">
-                <button type="submit" id="btnGerar">🚀 Gerar Projeto</button>
-                <button type="button" id="btnLimpar" class="btn-danger">Limpar</button>
+            <div class="form-group">
+                <label>Max Targets:</label>
+                <input type="text" id="maxTrack" value="1">
             </div>
-        </form>
+        </div>
+        
+        <h3>📦 Elementos AR</h3>
+        <div id="elementosList"></div>
+        
+        <button id="btnAdicionar">+ Adicionar Elemento AR</button>
+        
+        <div style="margin-top: 30px;">
+            <button id="btnGerar">🚀 Gerar Projeto</button>
+            <button id="btnLimpar" class="btn-danger">Limpar</button>
+        </div>
         
         <div id="resultado" class="qr-preview hidden">
-            <h2>✅ Projeto Criado com Sucesso!</h2>
-            <p><strong>📱 URL do Projeto:</strong></p>
+            <h2>✅ Projeto Criado!</h2>
             <div class="url-display" id="urlGerada"></div>
-            <p><strong>📷 QR Code (para imprimir junto com os targets):</strong></p>
             <div id="qrCodeImg"></div>
-            <button id="btnBaixar" class="btn-success">💾 Baixar Projeto (ZIP)</button>
-            <button id="btnCopiarUrl">📋 Copiar URL</button>
+            <button id="btnBaixar" class="btn-success">💾 Baixar ZIP</button>
             <button id="btnFechar">Fechar</button>
         </div>
     </div>
 
     <script>
-        // Variáveis globais
-        let elementosCount = 0;
-        let projetoAtual = null;
+        let elementoId = 0;
         
-        // Função para mostrar opções baseado no tipo selecionado
-        window.mostrarOpcoes = function(select, id) {
-            const tipo = select.value;
-            const container = document.getElementById(`opcoes-${id}`);
+        // Função para adicionar um novo elemento
+        function adicionarElemento() {
+            const container = document.getElementById('elementosList');
+            const div = document.createElement('div');
+            div.className = 'elemento-ar';
+            div.id = 'elem_' + elementoId;
             
-            if (!container) return;
-            
-            let html = `
+            div.innerHTML = `
+                <h4>Elemento ${elementoId + 1}</h4>
                 <div class="form-group">
-                    <label>Nome do arquivo:</label>
-                    <input type="text" id="src-${id}" placeholder="ex: video.mp4 ou imagem.png" required>
+                    <label>Tipo:</label>
+                    <select id="tipo_${elementoId}" onchange="atualizarOpcoes(${elementoId})">
+                        <option value="video">🎬 Vídeo</option>
+                        <option value="imagem">🖼️ Imagem</option>
+                    </select>
                 </div>
                 <div class="form-group">
-                    <label>Target Index (0, 1, 2...):</label>
-                    <input type="number" id="target-${id}" value="0" required>
-                    <small>Índice do target no arquivo .mind compilado</small>
+                    <label>Arquivo:</label>
+                    <input type="text" id="src_${elementoId}" placeholder="ex: video.mp4 ou imagem.png">
                 </div>
                 <div class="form-group">
-                    <label>Posição X, Y, Z:</label>
-                    <input type="text" id="pos-${id}" value="0,0,0" placeholder="0,0,0">
+                    <label>Target Index:</label>
+                    <input type="number" id="target_${elementoId}" value="0">
+                </div>
+                <div class="form-group">
+                    <label>Posição (x,y,z):</label>
+                    <input type="text" id="pos_${elementoId}" value="0,0,0">
                 </div>
                 <div class="form-group">
                     <label>Escala:</label>
-                    <input type="number" id="scale-${id}" value="1" step="0.1">
+                    <input type="number" id="scale_${elementoId}" value="1" step="0.1">
                 </div>
+                <div id="opcoes_${elementoId}"></div>
+                <button class="btn-danger" style="padding:5px 10px; font-size:12px" onclick="removerElemento(${elementoId})">❌ Remover</button>
             `;
             
+            container.appendChild(div);
+            atualizarOpcoes(elementoId);
+            elementoId++;
+        }
+        
+        // Função para atualizar opções baseado no tipo
+        function atualizarOpcoes(id) {
+            const tipo = document.getElementById('tipo_' + id).value;
+            const container = document.getElementById('opcoes_' + id);
+            
             if (tipo === 'video') {
-                html += `
+                container.innerHTML = `
                     <div class="form-group">
                         <label>Chromakey:</label>
-                        <select id="chroma-${id}">
+                        <select id="chroma_${id}">
                             <option value="none">Sem chromakey</option>
                             <option value="green">Fundo Verde</option>
                             <option value="blue">Fundo Azul</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Som MP3 (opcional):</label>
-                        <input type="text" id="sound-${id}" placeholder="som.mp3">
-                    </div>
-                    <div class="form-group">
-                        <label>Loop do vídeo:</label>
-                        <select id="loop-${id}">
-                            <option value="true">Sim</option>
-                            <option value="false">Não</option>
-                        </select>
+                        <label>Som (opcional):</label>
+                        <input type="text" id="sound_${id}" placeholder="som.mp3">
                     </div>
                 `;
-            } else if (tipo === 'imagem') {
-                html += `
+            } else {
+                container.innerHTML = `
                     <div class="form-group">
-                        <label>Link (URL para abrir ao clicar):</label>
-                        <input type="text" id="link-${id}" placeholder="https://meusite.com ou cena2.html">
+                        <label>Link (URL):</label>
+                        <input type="text" id="link_${id}" placeholder="https://site.com">
                     </div>
                     <div class="form-group">
                         <label>Abrir em nova aba:</label>
-                        <select id="newtab-${id}">
+                        <select id="newtab_${id}">
                             <option value="true">Sim</option>
                             <option value="false">Não</option>
                         </select>
                     </div>
                 `;
             }
-            
-            container.innerHTML = html;
-        };
+        }
         
-        // Função para adicionar um novo elemento
-        window.adicionarElemento = function() {
-            console.log('Adicionando elemento...', elementosCount);
-            
-            const elementosList = document.getElementById('elementosList');
-            if (!elementosList) {
-                console.error('elementosList não encontrado');
+        // Função para remover elemento
+        function removerElemento(id) {
+            const elem = document.getElementById('elem_' + id);
+            if (elem) elem.remove();
+        }
+        
+        // Função para limpar tudo
+        function limparFormulario() {
+            document.getElementById('elementosList').innerHTML = '';
+            document.getElementById('nomeProjeto').value = '';
+            document.getElementById('cliente').value = '';
+            elementoId = 0;
+            adicionarElemento();
+        }
+        
+        // Função para gerar o projeto
+        function gerarProjeto() {
+            const nomeProjeto = document.getElementById('nomeProjeto').value;
+            if (!nomeProjeto) {
+                alert('Digite um nome para o projeto');
                 return;
             }
             
-            const div = document.createElement('div');
-            div.className = 'elemento-ar';
-            div.id = `elemento-${elementosCount}`;
-            div.innerHTML = `
-                <h4>Elemento ${elementosCount + 1}</h4>
-                <div class="form-group">
-                    <label>Tipo:</label>
-                    <select onchange="mostrarOpcoes(this, ${elementosCount})" id="tipo-${elementosCount}">
-                        <option value="video">🎬 Vídeo MP4</option>
-                        <option value="imagem">🖼️ Imagem PNG/JPG</option>
-                    </select>
-                </div>
-                <div id="opcoes-${elementosCount}"></div>
-                <button type="button" onclick="removerElemento(${elementosCount})" class="btn-danger" style="padding: 5px 10px; font-size: 12px; margin-top: 10px;">❌ Remover</button>
-            `;
-            elementosList.appendChild(div);
+            const elementos = [];
             
-            // Mostrar opções padrão (vídeo)
-            const selectElement = document.getElementById(`tipo-${elementosCount}`);
-            if (selectElement) {
-                window.mostrarOpcoes(selectElement, elementosCount);
+            // Coletar todos os elementos
+            for (let i = 0; i < elementoId; i++) {
+                const elemDiv = document.getElementById('elem_' + i);
+                if (!elemDiv) continue;
+                
+                const tipo = document.getElementById('tipo_' + i)?.value;
+                const src = document.getElementById('src_' + i)?.value;
+                const targetIdx = parseInt(document.getElementById('target_' + i)?.value);
+                const posStr = document.getElementById('pos_' + i)?.value || '0,0,0';
+                const [x, y, z] = posStr.split(',').map(Number);
+                const scale = parseFloat(document.getElementById('scale_' + i)?.value);
+                
+                if (!src) continue;
+                
+                const elemento = {
+                    tipo: tipo,
+                    src: src,
+                    targetIndex: targetIdx,
+                    position: { x, y, z },
+                    scale: scale
+                };
+                
+                if (tipo === 'video') {
+                    elemento.chromaKey = document.getElementById('chroma_' + i)?.value || 'none';
+                    elemento.sound = document.getElementById('sound_' + i)?.value || null;
+                } else {
+                    elemento.link = document.getElementById('link_' + i)?.value || null;
+                    elemento.newTab = document.getElementById('newtab_' + i)?.value === 'true';
+                }
+                
+                elementos.push(elemento);
             }
             
-            elementosCount++;
-        };
-        
-        // Função para remover um elemento
-        window.removerElemento = function(id) {
-            const elemento = document.getElementById(`elemento-${id}`);
-            if (elemento) {
-                elemento.remove();
+            if (elementos.length === 0) {
+                alert('Adicione pelo menos um elemento AR');
+                return;
             }
-        };
+            
+            const nomeLimpo = nomeProjeto.toLowerCase().replace(/[^a-z0-9]/g, '-');
+            const urlProjeto = `https://${window.location.hostname}/projetos/${nomeLimpo}/`;
+            
+            // Mostrar resultado
+            document.getElementById('urlGerada').innerText = urlProjeto;
+            document.getElementById('qrCodeImg').innerHTML = '';
+            new QRCode(document.getElementById('qrCodeImg'), {
+                text: urlProjeto,
+                width: 200,
+                height: 200
+            });
+            document.getElementById('resultado').classList.remove('hidden');
+            
+            // Salvar projeto atual para download
+            window.projetoAtual = {
+                nome: nomeLimpo,
+                cliente: document.getElementById('cliente').value,
+                elementos: elementos,
+                url: urlProjeto
+            };
+        }
         
-        // Função para limpar o formulário
-        window.limparFormulario = function() {
-            document.getElementById('nomeProjeto').value = '';
-            document.getElementById('cliente').value = '';
-            const elementosList = document.getElementById('elementosList');
-            if (elementosList) {
-                elementosList.innerHTML = '';
-            }
-            elementosCount = 0;
-            window.adicionarElemento(); // Adicionar um elemento vazio
-        };
-        
-        // Função para fechar resultado
-        window.fecharResultado = function() {
-            document.getElementById('resultado').classList.add('hidden');
-        };
-        
-        // Função para copiar URL
-        window.copiarUrl = function() {
-            if (projetoAtual) {
-                navigator.clipboard.writeText(projetoAtual.url);
-                alert('URL copiada!');
-            }
-        };
-        
-        // Função para baixar o projeto
-        window.baixarProjeto = function() {
-            if (!projetoAtual) return;
+        // Função para baixar o ZIP
+        function baixarProjeto() {
+            if (!window.projetoAtual) return;
             
             const zip = new JSZip();
             
-            const htmlProjeto = gerarHTMLProjeto(projetoAtual);
-            zip.file('index.html', htmlProjeto);
-            
-            const instrucoes = `========================================
-INSTRUÇÕES PARA ESTE PROJETO AR
-========================================
-
-1. COMPILAR OS TARGETS:
-   Acesse: https://hiukim.github.io/mind-ar-js-doc/tools/compile
-   - Faça upload das suas imagens target (na mesma ordem dos targetIndex usados)
-   - Clique em "Start" e depois "Download"
-   - Coloque o arquivo "targets.mind" na pasta raiz deste projeto
-
-2. ADICIONAR OS ASSETS:
-   - Coloque todos os arquivos de mídia (vídeos, imagens, sons) na pasta /assets/
-   - Verifique se os nomes dos arquivos estão corretos (maiúsculas/minúsculas)
-
-3. ESTRUTURA FINAL:
-   projeto/
-   ├─ index.html
-   ├─ targets.mind
-   └─ assets/
-      ├─ (seus arquivos)
-
-4. PUBLICAR:
-   - Faça upload desta pasta para seu servidor ou GitHub Pages
-   - Acesse: ${projetoAtual.url}
-
-5. TESTAR NO CELULAR:
-   - Escaneie o QR Code gerado
-   - Aponte para os targets impressos
-
-========================================
-PROJETO: ${projetoAtual.nome}
-CLIENTE: ${projetoAtual.cliente || 'N/A'}
-ELEMENTOS: ${projetoAtual.elementos.length}
-========================================`;
-            
-            zip.file('INSTRUCOES.txt', instrucoes);
-            zip.file('assets/.gitkeep', '');
-            
-            zip.generateAsync({ type: 'blob' }).then((blob) => {
-                saveAs(blob, `${projetoAtual.nome}-ar-project.zip`);
-            });
-        };
-        
-        // Função para gerar o HTML do projeto
-        function gerarHTMLProjeto(projeto) {
-            return `<!DOCTYPE html>
-<html lang="pt-br">
+            // Gerar HTML
+            let htmlConteudo = `<!DOCTYPE html>
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-    <title>AR - ${projeto.nome}</title>
+    <title>AR - ${window.projetoAtual.nome}</title>
     <style>
-        body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
+        body { margin: 0; overflow: hidden; }
         #status {
             position: fixed;
             bottom: 20px;
             left: 20px;
             background: rgba(0,0,0,0.7);
             color: #0f0;
-            padding: 10px 15px;
+            padding: 10px;
             border-radius: 8px;
             font-size: 12px;
             z-index: 100;
-            font-family: monospace;
-            backdrop-filter: blur(5px);
-        }
-        .instruction {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: rgba(0,0,0,0.6);
-            color: white;
-            padding: 8px 12px;
-            border-radius: 5px;
-            font-size: 11px;
-            z-index: 100;
-            pointer-events: none;
-        }
-        .target-found { color: #0f0; }
-        .target-lost { color: #f00; animation: pulse 1s infinite; }
-        @keyframes pulse {
-            0%, 100% { opacity: 0.5; }
-            50% { opacity: 1; }
         }
     </style>
 </head>
 <body>
     <div id="status">🔍 Aguardando target...</div>
-    <div class="instruction">🎯 Aponte para o marcador | 🔗 Toque nos elementos</div>
     
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
     
-    <a-scene embedded color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
-        <a-camera position="0 0 0" look-controls="enabled: false" cursor="fuse: false; rayOrigin: mouse;" raycaster="objects: .clickable"></a-camera>
+    <a-scene mindar-image="imageTargetSrc: ./targets.mind;" embedded>
+        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
         
-        ${projeto.elementos.map((elem, idx) => {
+        ${window.projetoAtual.elementos.map((elem, idx) => {
             if (elem.tipo === 'video') {
                 return `
         <a-entity mindar-image-target="targetIndex: ${elem.targetIndex}">
-            <a-plane position="${elem.position.x} ${elem.position.y} ${elem.position.z}" scale="${elem.scale} ${elem.scale} ${elem.scale}" material="color: white; transparent: true" id="video-${idx}"></a-plane>
+            <a-plane position="${elem.position.x} ${elem.position.y} ${elem.position.z}" scale="${elem.scale} ${elem.scale} ${elem.scale}" material="color: white"></a-plane>
         </a-entity>`;
-            } else if (elem.tipo === 'imagem') {
+            } else {
                 return `
         <a-entity mindar-image-target="targetIndex: ${elem.targetIndex}">
-            <a-image src="${elem.src}" position="${elem.position.x} ${elem.position.y} ${elem.position.z}" scale="${elem.scale} ${elem.scale} ${elem.scale}" ${elem.link ? 'class="clickable"' : ''}></a-image>
+            <a-image src="./assets/${elem.src}" position="${elem.position.x} ${elem.position.y} ${elem.position.z}" scale="${elem.scale} ${elem.scale} ${elem.scale}"></a-image>
         </a-entity>`;
             }
-            return '';
         }).join('')}
     </a-scene>
+    
+    <script>
+        const statusDiv = document.getElementById('status');
+        const sceneEl = document.querySelector('a-scene');
+        
+        sceneEl.addEventListener('targetFound', () => {
+            statusDiv.innerHTML = '✅ Target encontrado!';
+            statusDiv.style.color = '#0f0';
+        });
+        
+        sceneEl.addEventListener('targetLost', () => {
+            statusDiv.innerHTML = '⚠️ Target perdido';
+            statusDiv.style.color = '#f00';
+        });
+    </script>
 </body>
 </html>`;
+            
+            zip.file('index.html', htmlConteudo);
+            zip.file('assets/.gitkeep', '');
+            
+            const instrucoes = `INSTRUÇÕES:
+1. Compile seus targets em: https://hiukim.github.io/mind-ar-js-doc/tools/compile
+2. Coloque o arquivo targets.mind na mesma pasta do index.html
+3. Coloque seus assets (vídeos/imagens) na pasta /assets/
+4. Publique no GitHub Pages ou seu servidor
+5. Acesse: ${window.projetoAtual.url}`;
+            
+            zip.file('INSTRUCOES.txt', instrucoes);
+            
+            zip.generateAsync({ type: 'blob' }).then(blob => {
+                saveAs(blob, `${window.projetoAtual.nome}-ar.zip`);
+            });
         }
         
-        // Configurar eventos quando o DOM carregar
+        // Configurar eventos quando a página carregar
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM carregado, configurando eventos...');
+            // Adicionar primeiro elemento
+            adicionarElemento();
             
-            // Botão de adicionar elemento
-            const btnAdicionar = document.getElementById('btnAdicionarElemento');
-            if (btnAdicionar) {
-                btnAdicionar.addEventListener('click', function() {
-                    window.adicionarElemento();
-                });
-            }
-            
-            // Botão de limpar
-            const btnLimpar = document.getElementById('btnLimpar');
-            if (btnLimpar) {
-                btnLimpar.addEventListener('click', function() {
-                    window.limparFormulario();
-                });
-            }
-            
-            // Botão de fechar resultado
-            const btnFechar = document.getElementById('btnFechar');
-            if (btnFechar) {
-                btnFechar.addEventListener('click', function() {
-                    window.fecharResultado();
-                });
-            }
-            
-            // Botão de copiar URL
-            const btnCopiarUrl = document.getElementById('btnCopiarUrl');
-            if (btnCopiarUrl) {
-                btnCopiarUrl.addEventListener('click', function() {
-                    window.copiarUrl();
-                });
-            }
-            
-            // Botão de baixar
-            const btnBaixar = document.getElementById('btnBaixar');
-            if (btnBaixar) {
-                btnBaixar.addEventListener('click', function() {
-                    window.baixarProjeto();
-                });
-            }
-            
-            // Formulário de gerar projeto
-            const formProjeto = document.getElementById('formProjeto');
-            if (formProjeto) {
-                formProjeto.addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    
-                    const nomeProjeto = document.getElementById('nomeProjeto').value;
-                    if (!nomeProjeto) {
-                        alert('Por favor, insira um nome para o projeto');
-                        return;
-                    }
-                    
-                    const nomeLimpo = nomeProjeto.toLowerCase().replace(/[^a-z0-9]/g, '-');
-                    
-                    // Coletar elementos
-                    const elementos = [];
-                    for (let i = 0; i < elementosCount; i++) {
-                        const div = document.getElementById(`elemento-${i}`);
-                        if (!div) continue;
-                        
-                        const tipoSelect = document.getElementById(`tipo-${i}`);
-                        if (!tipoSelect) continue;
-                        
-                        const tipo = tipoSelect.value;
-                        const src = document.getElementById(`src-${i}`)?.value;
-                        const targetIdx = parseInt(document.getElementById(`target-${i}`)?.value);
-                        const posStr = document.getElementById(`pos-${i}`)?.value || '0,0,0';
-                        const [x, y, z] = posStr.split(',').map(Number);
-                        const scale = parseFloat(document.getElementById(`scale-${i}`)?.value);
-                        
-                        if (!src) continue;
-                        
-                        const elemento = { tipo, src, targetIndex: targetIdx, position: { x, y, z }, scale };
-                        
-                        if (tipo === 'video') {
-                            elemento.chromaKey = document.getElementById(`chroma-${i}`)?.value || 'none';
-                            elemento.sound = document.getElementById(`sound-${i}`)?.value || null;
-                            elemento.loop = document.getElementById(`loop-${i}`)?.value === 'true';
-                        } else if (tipo === 'imagem') {
-                            elemento.link = document.getElementById(`link-${i}`)?.value || null;
-                            elemento.newTab = document.getElementById(`newtab-${i}`)?.value === 'true';
-                        }
-                        
-                        elementos.push(elemento);
-                    }
-                    
-                    if (elementos.length === 0) {
-                        alert('Adicione pelo menos um elemento AR');
-                        return;
-                    }
-                    
-                    // Parâmetros de rastreamento
-                    const trackingParams = {
-                        filterMinCF: parseFloat(document.getElementById('filterMinCF').value) || 0.001,
-                        filterBeta: parseFloat(document.getElementById('filterBeta').value) || 1000,
-                        missTolerance: parseInt(document.getElementById('missTolerance').value) || 5,
-                        maxTrack: parseInt(document.getElementById('maxTrack').value) || 1
-                    };
-                    
-                    // Gerar URL
-                    const urlCompleta = `https://${window.location.hostname}/projetos/${nomeLimpo}/`;
-                    
-                    projetoAtual = { 
-                        nome: nomeLimpo, 
-                        cliente: document.getElementById('cliente').value,
-                        url: urlCompleta, 
-                        elementos,
-                        trackingParams,
-                        dataCriacao: new Date().toISOString()
-                    };
-                    
-                    // Mostrar URL e QR Code
-                    document.getElementById('urlGerada').innerText = urlCompleta;
-                    document.getElementById('qrCodeImg').innerHTML = '';
-                    new QRCode(document.getElementById('qrCodeImg'), {
-                        text: urlCompleta,
-                        width: 200,
-                        height: 200
-                    });
-                    document.getElementById('resultado').classList.remove('hidden');
-                });
-            }
-            
-            // Adicionar primeiro elemento automaticamente
-            window.adicionarElemento();
+            // Botões
+            document.getElementById('btnAdicionar').onclick = adicionarElemento;
+            document.getElementById('btnLimpar').onclick = limparFormulario;
+            document.getElementById('btnGerar').onclick = gerarProjeto;
+            document.getElementById('btnBaixar').onclick = baixarProjeto;
+            document.getElementById('btnFechar').onclick = function() {
+                document.getElementById('resultado').classList.add('hidden');
+            };
         });
     </script>
 </body>
