@@ -1,16 +1,63 @@
-<html>
-  <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/dist/mindar-image.prod.js"></script>
-    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/dist/mindar-image-aframe.prod.js"></script>
-  </head>
-  <body>
-    <a-scene mindar-image="imageTargetSrc: ./targets.mind;" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
-      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-      <a-entity mindar-image-target="targetIndex: 0">
-        <a-plane color="blue" opaciy="0.5" position="0 0 0" height="0.552" width="1" rotation="0 0 0"></a-plane>
-      </a-entity>
-    </a-scene>
-  </body>
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WEBAR-ILIDIO - Plataforma AR</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 { color: #333; margin-bottom: 10px; }
+        .subtitle { color: #666; margin-bottom: 30px; }
+        .btn {
+            display: inline-block;
+            padding: 15px 30px;
+            margin: 10px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: transform 0.3s;
+        }
+        .btn-primary { background: #667eea; color: white; }
+        .btn-secondary { background: #f39c12; color: white; }
+        .btn:hover { transform: translateY(-3px); }
+        .features { text-align: left; margin-top: 30px; }
+        .feature { margin: 15px 0; padding: 10px; background: #f5f5f5; border-radius: 10px; }
+        .feature h3 { color: #667eea; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 WEBAR-ILIDIO</h1>
+        <p class="subtitle">Plataforma de Realidade Aumentada</p>
+        
+        <div>
+            <a href="gerador.html" class="btn btn-primary">✨ Criar Projeto AR</a>
+            <a href="admin.html" class="btn btn-secondary">📊 Painel Admin</a>
+        </div>
+        
+        <div class="features">
+            <div class="feature"><h3>🎬 Vídeos com Chroma Key</h3><p>Remova fundo verde/azul</p></div>
+            <div class="feature"><h3>🖼️ Imagens e Portais</h3><p>Crie efeitos de oclusão</p></div>
+            <div class="feature"><h3>🔊 Áudio Sincronizado</h3><p>Sons que pausam com o target</p></div>
+            <div class="feature"><h3>📱 QR Code Automático</h3><p>Compartilhe facilmente</p></div>
+        </div>
+    </div>
+</body>
 </html>
