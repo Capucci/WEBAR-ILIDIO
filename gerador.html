@@ -1,1 +1,640 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Projetos AR</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1, h2, h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #555;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .elemento-ar {
+            background: #f5f5f5;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+        .qr-preview {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 10px;
+        }
+        .hidden {
+            display: none;
+        }
+        .url-display {
+            background: #e0e0e0;
+            padding: 10px;
+            border-radius: 5px;
+            word-break: break-all;
+            margin: 10px 0;
+            font-family: monospace;
+        }
+        .btn-danger {
+            background: #e74c3c;
+        }
+        .btn-success {
+            background: #27ae60;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✨ Criar Novo Projeto AR</h1>
+        <p>Preencha os dados abaixo para gerar sua experiência em Realidade Aumentada</p>
+        
+        <form id="formProjeto">
+            <div class="form-group">
+                <label>Nome do Projeto (sem espaços):</label>
+                <input type="text" id="nomeProjeto" required placeholder="ex: campanha-natal">
+            </div>
+            
+            <div class="form-group">
+                <label>Cliente/Empresa:</label>
+                <input type="text" id="cliente" placeholder="Nome do cliente (opcional)">
+            </div>
+            
+            <h3>📦 Elementos de Realidade Aumentada</h3>
+            <div id="elementosList"></div>
+            <button type="button" onclick="adicionarElemento()">+ Adicionar Elemento AR</button>
+            
+            <div style="margin-top: 30px;">
+                <button type="submit">🚀 Gerar Projeto</button>
+                <button type="button" onclick="limparFormulario()" class="btn-danger">Limpar</button>
+            </div>
+        </form>
+        
+        <div id="resultado" class="qr-preview hidden">
+            <h2>✅ Projeto Criado com Sucesso!</h2>
+            <p><strong>📱 URL do Projeto:</strong></p>
+            <div class="url-display" id="urlGerada"></div>
+            <p><strong>📷 QR Code (para imprimir junto com os targets):</strong></p>
+            <div id="qrCodeImg"></div>
+            <button onclick="baixarProjeto()" class="btn-success">💾 Baixar Projeto (ZIP)</button>
+            <button onclick="copiarUrl()">📋 Copiar URL</button>
+            <button onclick="document.getElementById('resultado').classList.add('hidden')">Fechar</button>
+        </div>
+    </div>
 
+    <script>
+        let elementosCount = 0;
+        let projetoAtual = null;
+        
+        function adicionarElemento() {
+            const div = document.createElement('div');
+            div.className = 'elemento-ar';
+            div.id = `elemento-${elementosCount}`;
+            div.innerHTML = `
+                <h4>Elemento ${elementosCount + 1}</h4>
+                <div class="form-group">
+                    <label>Tipo:</label>
+                    <select onchange="mostrarOpcoes(this, ${elementosCount})" id="tipo-${elementosCount}">
+                        <option value="video">🎬 Vídeo MP4</option>
+                        <option value="imagem">🖼️ Imagem PNG/JPG</option>
+                    </select>
+                </div>
+                <div id="opcoes-${elementosCount}"></div>
+                <button type="button" onclick="removerElemento(${elementosCount})" class="btn-danger" style="padding: 5px 10px; font-size: 12px;">❌ Remover</button>
+            `;
+            document.getElementById('elementosList').appendChild(div);
+            
+            // Mostrar opções padrão (vídeo)
+            mostrarOpcoes(document.getElementById(`tipo-${elementosCount}`), elementosCount);
+            elementosCount++;
+        }
+        
+        function mostrarOpcoes(select, id) {
+            const tipo = select.value;
+            const container = document.getElementById(`opcoes-${id}`);
+            
+            let html = `
+                <div class="form-group">
+                    <label>Nome do arquivo:</label>
+                    <input type="text" id="src-${id}" placeholder="ex: video.mp4" required>
+                </div>
+                <div class="form-group">
+                    <label>Target Index (0, 1, 2...):</label>
+                    <input type="number" id="target-${id}" value="0" required>
+                </div>
+                <div class="form-group">
+                    <label>Posição X, Y, Z:</label>
+                    <input type="text" id="pos-${id}" value="0,0,0" placeholder="0,0,0">
+                </div>
+                <div class="form-group">
+                    <label>Escala:</label>
+                    <input type="number" id="scale-${id}" value="1" step="0.1">
+                </div>
+            `;
+            
+            if (tipo === 'video') {
+                html += `
+                    <div class="form-group">
+                        <label>Chromakey:</label>
+                        <select id="chroma-${id}">
+                            <option value="none">Sem chromakey</option>
+                            <option value="green">Fundo Verde</option>
+                            <option value="blue">Fundo Azul</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Som MP3 (opcional):</label>
+                        <input type="text" id="sound-${id}" placeholder="som.mp3">
+                    </div>
+                `;
+            } else if (tipo === 'imagem') {
+                html += `
+                    <div class="form-group">
+                        <label>Link (URL para abrir ao clicar):</label>
+                        <input type="text" id="link-${id}" placeholder="https://meusite.com">
+                    </div>
+                `;
+            }
+            
+            container.innerHTML = html;
+        }
+        
+        function removerElemento(id) {
+            const elemento = document.getElementById(`elemento-${id}`);
+            if (elemento) elemento.remove();
+        }
+        
+        function limparFormulario() {
+            document.getElementById('nomeProjeto').value = '';
+            document.getElementById('cliente').value = '';
+            document.getElementById('elementosList').innerHTML = '';
+            elementosCount = 0;
+            adicionarElemento(); // Adicionar um elemento vazio
+        }
+        
+        document.getElementById('formProjeto').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const nomeProjeto = document.getElementById('nomeProjeto').value;
+            if (!nomeProjeto) {
+                alert('Por favor, insira um nome para o projeto');
+                return;
+            }
+            
+            // Limpar nome de projeto (remover espaços e caracteres especiais)
+            const nomeLimpo = nomeProjeto.toLowerCase().replace(/[^a-z0-9]/g, '-');
+            
+            // Coletar elementos
+            const elementos = [];
+            for (let i = 0; i < elementosCount; i++) {
+                const div = document.getElementById(`elemento-${i}`);
+                if (!div) continue;
+                
+                const tipoSelect = document.getElementById(`tipo-${i}`);
+                if (!tipoSelect) continue;
+                
+                const tipo = tipoSelect.value;
+                const src = document.getElementById(`src-${i}`)?.value;
+                const targetIdx = parseInt(document.getElementById(`target-${i}`)?.value);
+                const posStr = document.getElementById(`pos-${i}`)?.value || '0,0,0';
+                const [x, y, z] = posStr.split(',').map(Number);
+                const scale = parseFloat(document.getElementById(`scale-${i}`)?.value);
+                
+                if (!src) continue;
+                
+                const elemento = { tipo, src, targetIndex: targetIdx, position: { x, y, z }, scale };
+                
+                if (tipo === 'video') {
+                    elemento.chromaKey = document.getElementById(`chroma-${i}`)?.value || 'none';
+                    elemento.sound = document.getElementById(`sound-${i}`)?.value || null;
+                } else if (tipo === 'imagem') {
+                    elemento.link = document.getElementById(`link-${i}`)?.value || null;
+                }
+                
+                elementos.push(elemento);
+            }
+            
+            if (elementos.length === 0) {
+                alert('Adicione pelo menos um elemento AR');
+                return;
+            }
+            
+            // Gerar URL
+            const urlCompleta = `https://${window.location.hostname}/projetos/${nomeLimpo}/`;
+            
+            projetoAtual = { 
+                nome: nomeLimpo, 
+                cliente: document.getElementById('cliente').value,
+                url: urlCompleta, 
+                elementos,
+                dataCriacao: new Date().toISOString()
+            };
+            
+            // Mostrar URL e QR Code
+            document.getElementById('urlGerada').innerText = urlCompleta;
+            document.getElementById('qrCodeImg').innerHTML = '';
+            new QRCode(document.getElementById('qrCodeImg'), {
+                text: urlCompleta,
+                width: 200,
+                height: 200
+            });
+            document.getElementById('resultado').classList.remove('hidden');
+        });
+        
+        function copiarUrl() {
+            if (projetoAtual) {
+                navigator.clipboard.writeText(projetoAtual.url);
+                alert('URL copiada!');
+            }
+        }
+        
+        function baixarProjeto() {
+            if (!projetoAtual) return;
+            
+            const zip = new JSZip();
+            
+            // Gerar HTML do projeto
+            const htmlProjeto = gerarHTMLProjeto(projetoAtual);
+            zip.file('index.html', htmlProjeto);
+            
+            // Criar arquivo de exemplo para targets
+            const targetsReadme = `# Instruções para este projeto AR
+
+1. Compile seus targets .mind usando o site: https://hiukim.github.io/mind-ar-js-doc/tools/compile
+
+2. Coloque o arquivo targets.mind nesta pasta
+
+3. Coloque seus assets (vídeos, imagens, sons) na pasta /assets/
+
+4. Faça upload para seu servidor ou GitHub Pages
+
+5. Acesse a URL: ${projetoAtual.url}
+`;
+            zip.file('INSTRUCOES.txt', targetsReadme);
+            
+            // Criar pasta assets vazia com arquivo .gitkeep
+            zip.file('assets/.gitkeep', '');
+            
+            // Gerar e baixar ZIP
+            zip.generateAsync({ type: 'blob' }).then((blob) => {
+                saveAs(blob, `${projetoAtual.nome}-ar-project.zip`);
+            });
+        }
+        
+        function gerarHTMLProjeto(projeto) {
+            return `<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>AR - ${projeto.nome}</title>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
+        #status {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.7);
+            color: #0f0;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 12px;
+            z-index: 100;
+            font-family: monospace;
+            backdrop-filter: blur(5px);
+        }
+        .instruction {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 11px;
+            z-index: 100;
+            pointer-events: none;
+        }
+        .target-found { color: #0f0; }
+        .target-lost { color: #f00; animation: pulse 1s infinite; }
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div id="status">🔍 Aguardando target...</div>
+    <div class="instruction">🎯 Aponte para o marcador | 🔗 Toque nos elementos</div>
+    
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+                "mindar": "https://unpkg.com/mind-ar@1.2.3/dist/mindar-image-three.prod.js"
+            }
+        }
+    </script>
+    
+    <script type="module">
+        import * as THREE from 'three';
+        import { MindARThree } from 'mindar';
+        
+        const config = ${JSON.stringify(projeto.elementos, null, 2)};
+        const assetsPath = './assets/';
+        
+        const mindar = new MindARThree({
+            container: document.body,
+            imageTargetSrc: './targets.mind'
+        });
+        
+        class TrackedElement {
+            constructor(anchor, elemConfig) {
+                this.anchor = anchor;
+                this.config = elemConfig;
+                this.mesh = null;
+                this.videoElement = null;
+                this.audioElement = null;
+                this.videoCurrentTime = 0;
+                this.isVisible = false;
+            }
+            
+            createMesh() {
+                if (this.config.tipo === 'video') return this.createVideoMesh();
+                if (this.config.tipo === 'imagem') return this.createImageMesh();
+                return null;
+            }
+            
+            createVideoMesh() {
+                this.videoElement = document.createElement('video');
+                this.videoElement.src = assetsPath + this.config.src;
+                this.videoElement.loop = false;
+                this.videoElement.playsInline = true;
+                this.videoElement.crossOrigin = "anonymous";
+                this.videoElement.load();
+                
+                const videoTexture = new THREE.VideoTexture(this.videoElement);
+                let material;
+                
+                if (this.config.chromaKey && this.config.chromaKey !== 'none') {
+                    const chromaColor = this.config.chromaKey === 'green' ? new THREE.Color(0x00ff00) : new THREE.Color(0x0000ff);
+                    const vertexShader = \`
+                        varying vec2 vUv;
+                        void main() {
+                            vUv = uv;
+                            gl_PointSize = 1.0;
+                            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                        }
+                    \`;
+                    const fragmentShader = \`
+                        uniform sampler2D videoTexture;
+                        uniform vec3 chromaColor;
+                        uniform float threshold;
+                        varying vec2 vUv;
+                        void main() {
+                            vec4 color = texture2D(videoTexture, vUv);
+                            float diff = abs(color.r - chromaColor.r) + abs(color.g - chromaColor.g) + abs(color.b - chromaColor.b);
+                            if (diff < 0.3) discard;
+                            gl_FragColor = color;
+                        }
+                    \`;
+                    material = new THREE.ShaderMaterial({
+                        uniforms: {
+                            videoTexture: { value: videoTexture },
+                            chromaColor: { value: chromaColor },
+                            threshold: { value: 0.3 }
+                        },
+                        vertexShader: vertexShader,
+                        fragmentShader: fragmentShader,
+                        transparent: true
+                    });
+                } else {
+                    material = new THREE.MeshBasicMaterial({ map: videoTexture });
+                }
+                
+                const plane = new THREE.Mesh(new THREE.PlaneGeometry(1, 0.5625), material);
+                this.mesh = plane;
+                
+                if (this.config.sound) {
+                    this.audioElement = new Audio(assetsPath + this.config.sound);
+                    this.audioElement.loop = true;
+                    this.audioElement.preload = "auto";
+                }
+                
+                return plane;
+            }
+            
+            createImageMesh() {
+                const texture = new THREE.TextureLoader().load(assetsPath + this.config.src);
+                const material = new THREE.MeshStandardMaterial({ 
+                    map: texture, 
+                    side: THREE.DoubleSide, 
+                    transparent: true 
+                });
+                const plane = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), material);
+                this.mesh = plane;
+                
+                if (this.config.link) {
+                    this.mesh.userData = { link: this.config.link };
+                }
+                
+                return plane;
+            }
+            
+            play() {
+                if (this.videoElement && this.videoElement.paused) {
+                    this.videoElement.currentTime = this.videoCurrentTime;
+                    this.videoElement.play().catch(e => console.log("Vídeo:", e));
+                }
+                if (this.audioElement && this.audioElement.paused) {
+                    this.audioElement.play().catch(e => console.log("Áudio:", e));
+                }
+            }
+            
+            pause() {
+                if (this.videoElement && !this.videoElement.paused) {
+                    this.videoCurrentTime = this.videoElement.currentTime;
+                    this.videoElement.pause();
+                }
+                if (this.audioElement && !this.audioElement.paused) {
+                    this.audioElement.pause();
+                }
+            }
+            
+            setVisible(visible) {
+                if (visible === this.isVisible) return;
+                this.isVisible = visible;
+                
+                if (visible) {
+                    this.play();
+                    if (this.mesh) this.mesh.visible = true;
+                } else {
+                    this.pause();
+                    if (this.mesh) this.mesh.visible = false;
+                }
+            }
+        }
+        
+        const trackedElements = [];
+        const anchorsUsed = new Map();
+        
+        for (let i = 0; i < config.length; i++) {
+            const elemConfig = config[i];
+            let anchor = mindar.getAnchor(elemConfig.targetIndex);
+            if (!anchor) {
+                anchor = mindar.addAnchor(elemConfig.targetIndex);
+            }
+            
+            const tracked = new TrackedElement(anchor, elemConfig);
+            const mesh = tracked.createMesh();
+            
+            if (mesh) {
+                mesh.position.set(elemConfig.position.x, elemConfig.position.y, elemConfig.position.z);
+                mesh.scale.set(elemConfig.scale, elemConfig.scale, elemConfig.scale);
+                mesh.visible = false;
+                anchor.group.add(mesh);
+                trackedElements.push(tracked);
+            }
+        }
+        
+        // Configurar cliques
+        const renderer = mindar.renderer;
+        const camera = mindar.camera;
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        
+        window.addEventListener('click', (event) => {
+            if (!renderer || !camera) return;
+            
+            mouse.x = (event.clientX / renderer.domElement.clientWidth) * 2 - 1;
+            mouse.y = -(event.clientY / renderer.domElement.clientHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            
+            const clickableObjects = trackedElements
+                .filter(t => t.mesh?.userData?.link && t.isVisible)
+                .map(t => t.mesh);
+            
+            const intersects = raycaster.intersectObjects(clickableObjects);
+            if (intersects.length > 0) {
+                const link = intersects[0].object.userData.link;
+                if (link) {
+                    if (link.startsWith('http')) {
+                        window.open(link, '_blank');
+                    } else {
+                        window.location.href = link;
+                    }
+                }
+            }
+        });
+        
+        // Monitorar visibilidade
+        const statusDiv = document.getElementById('status');
+        let lastVisibleCount = 0;
+        
+        function updateVisibility() {
+            let visibleCount = 0;
+            
+            for (const tracked of trackedElements) {
+                const anchorVisible = tracked.anchor.group && tracked.anchor.group.visible;
+                tracked.setVisible(anchorVisible);
+                if (anchorVisible) visibleCount++;
+            }
+            
+            if (visibleCount > 0 && lastVisibleCount === 0) {
+                statusDiv.innerHTML = \`✅ Target encontrado | AR ativo\`;
+                statusDiv.className = 'target-found';
+            } else if (visibleCount === 0 && lastVisibleCount > 0) {
+                statusDiv.innerHTML = \`⚠️ Target perdido | Aponte novamente para retomar\`;
+                statusDiv.className = 'target-lost';
+            } else if (visibleCount === 0) {
+                statusDiv.innerHTML = \`🔍 Aguardando target...\`;
+            }
+            
+            lastVisibleCount = visibleCount;
+            requestAnimationFrame(updateVisibility);
+        }
+        
+        // Iniciar AR
+        try {
+            await mindar.start();
+            updateVisibility();
+            console.log('AR iniciado com sucesso!');
+        } catch (error) {
+            console.error('Erro ao iniciar AR:', error);
+            statusDiv.innerHTML = '❌ Erro ao iniciar AR. Verifique se o arquivo targets.mind existe.';
+        }
+        
+        // Ativar áudio no primeiro toque (política do navegador)
+        const enableAudio = () => {
+            for (const tracked of trackedElements) {
+                if (tracked.audioElement && tracked.isVisible) {
+                    tracked.audioElement.play().catch(e => {});
+                }
+                if (tracked.videoElement && tracked.isVisible) {
+                    tracked.videoElement.play().catch(e => {});
+                }
+            }
+            window.removeEventListener('touchstart', enableAudio);
+            window.removeEventListener('click', enableAudio);
+        };
+        window.addEventListener('touchstart', enableAudio);
+        window.addEventListener('click', enableAudio);
+    </script>
+</body>
+</html>`;
+        }
+        
+        // Adicionar primeiro elemento automaticamente
+        adicionarElemento();
+    </script>
+</body>
+</html>
